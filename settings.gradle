@@ -1,0 +1,2 @@
+rootProject.name='slaps'
+include ':app'
