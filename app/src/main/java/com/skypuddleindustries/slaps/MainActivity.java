@@ -2,9 +2,12 @@ package com.skypuddleindustries.slaps;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.IBinder;
+
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,12 +43,27 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public void onCompleteion(MediaPlayer mp) {
         //invoked when playback of media source has completed
+        stopMedia();;
+        //stop the service
+        stopSelf();
     }
 
     //Handle errors
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
         //invoked when there has been an error during an asynchronous operation
+        switch (what {
+            case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
+                Log.d("MediaPlayer Error", "MEDIA ERROR NOT VALID FOR PROGRESSIVE PLAYBACK " + extra);
+                break;
+            case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+                Log.d("MediaPlayer Error", "MEDIA ERROR SERVER DIED " + extra);
+                break;
+            case MediaPlayer.MEDIA_ERROR_UNKNOWN:
+                Log.d("MediaPlayer Error", "MEDIA ERROR UNKNOWN " + extra);
+                break;
+            "
+        }
         return false;
     }
 
@@ -58,6 +76,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public void onPrepared(MediaPlayer mp) {
         //invoked when the media source is ready for playback
+        playMedia();
     }
 
     @Override
@@ -75,4 +94,62 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             return MediaPlayerService.this;
         }
     }
-}
+
+    private MediaPlayer mediaPlayer;
+    // path to the audio file
+    private String mediaFile;
+
+    private void initMediaPlayer() {
+        mediaPlayer = new MediaPlayer();
+        // Set up MediaPlayer event listeners
+        mediaPlayer.setOnCompletionListener(this);
+        mediaPlayer.setOnErrorListener(this);
+        mediaPlayer.setOnPreparedListener(this);
+        mediaPlayer.setOnBufferingUpdateListener(this);
+        mediaPlayer.setOnSeekCompleteListener(this);
+        mediaPlayer.setOnInfoListener(this);
+        //Reset so that the MediaPlayer is not pointing to another data source
+        mediaPlayer.reset();
+
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        try {
+            // Set the data source to the mediaFile location
+            mediaPlayer.setDataSource(mediaFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            stopSelf();
+        }
+        mediaPlayer.prepareAsync();
+    }
+
+    }
+
+    //used to pause/resume MediaPlayer
+    private int resumePosition;
+
+    private void playMedia() {
+        if (!mediaPlayer.isPlaying()) {
+            mediaPlayer.start();
+        }
+    }
+
+    private void stopMedia() {
+        if (mediaPlayer == null) return;
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
+        }
+    }
+
+    private void pauseMedia() {
+        if (!mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            resumePosition = mediaPlayer.getCurrentPosition();
+        }
+    }
+
+    private voide resumeMedia() {
+        if (!mediaPlayer.isPlaying()) {
+            mediaPlayer.seekTo(resumePosition);
+            mediaPlayer.start();
+        }
+    }
