@@ -164,7 +164,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         mediaPlayer.prepareAsync();
     }
 
-    }
 
     //used to pause/resume MediaPlayer
     private int resumePosition;
@@ -197,3 +196,37 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     }
 
     private AudioManager audioManager;
+
+    //the system calls this method when an activity requests the service be started
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startID) {
+        try {
+            //an audio file is passeed to the service through putExtra();
+            mediaFile = intent.getExtras().getString("media");
+        } catch (NullPointerException e) {
+            stopSelf();
+        }
+
+        //request audi focus
+        if (requestAudioFocus() == false) {
+            // could not gain focus
+            stopSelf();
+        }
+
+        if (mediaFile != null && mediaFile != "")
+            initMediaPlayer();
+
+        return super.onStartCommand(intent, flags, startID):
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            stopMedia();
+            mediaPlayer.release();
+        }
+        removeAudioFocus();
+    }
+
+}
